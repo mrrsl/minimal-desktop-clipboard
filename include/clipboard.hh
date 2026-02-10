@@ -15,5 +15,5 @@ namespace ClipLib {
 }
 
 #ifdef HEADER_ONLY
-#include "./src/clipboard.cc"
+#include "../src/clipboard.cc"
 #endif

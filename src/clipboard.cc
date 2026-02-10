@@ -1,6 +1,6 @@
 #pragma once
 
-#include "include/clipboard.hh"
+#include "clipboard.hh"
 
 #if defined(WIN32)
 #include "src/clipboardWIN32.cc"
@@ -23,7 +23,7 @@ bool ClipLib::FormatAvailable(ClipLib::Format reqFormat) {
 
 
 #elif defined(__linux__)
-#include "src/clipboardX11.cc"
+#include "clipboardX11.cc"
 
 std::string ClipLib::GetClipboard() {
     return ClipLibX11::GetSelectionAsUtf8();

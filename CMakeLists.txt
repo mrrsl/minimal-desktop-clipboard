@@ -32,8 +32,8 @@ if (UNIX)
     target_link_libraries(cliplib -lpthread)
 endif()
 
-target_include_directories(testmain PRIVATE ${PROJECT_SOURCE_DIR})
-target_include_directories(cliplib PUBLIC ${PROJECT_SOURCE_DIR})
+target_include_directories(testmain PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(cliplib PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(testmain GTest::gtest_main)
 target_link_libraries(testmain cliplib)

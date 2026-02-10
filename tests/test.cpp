@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
-#include "include/clipboard.hh"
+#include "clipboard.hh"
 
 void SimplePasteCheck(const char* text) {
     auto textString = std::string(text);
