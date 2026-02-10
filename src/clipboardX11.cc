@@ -80,18 +80,25 @@ char* Internal_RetrieveSelectionUtf8();
 
 // Returns a string matching the text on the clipboard selection
 std::string GetSelectionAsUtf8();
+
 // Relinquishes ownership of the CLIPBOARD selection to the X server if selection is owned by ClipWindow.
 void RelinquishClipboard();
+
 // Sets data to be sent back on a request for the CLIPBOARD selection
 bool SetClipboardText(char* str);
+
 // Procedure for responding to requests for data set by SetClipboard
 void* SetClipboardTextProc(void* data);
+
 // Sends Clipboard Text data to a requestor
 void Internal_SendClipboardText(XSelectionRequestEvent event, Display*);
+
 // Sends an array of available format targets to a requestor
 void Internal_SendTargetData(XSelectionRequestEvent event, Display*);
+
 // Thread cleanup for SetClipboardTextProc
 void CleanupSetClipboard(void*);
+
 // Constructs an event to send as a reply to a SelectionRequest
 XSelectionEvent ConstructSelectionEvent(XSelectionRequestEvent event);
 } // namespace ClipLibX11
@@ -99,8 +106,10 @@ XSelectionEvent ConstructSelectionEvent(XSelectionRequestEvent event);
 
 // Returns true if the list of targets contains the specified Atom.
 bool ClipLibX11::HasTarget(Atom searchTarget, std::vector<Atom> &targets) {
+    
     for (std::size_t a = 0; a < targets.size(); a++) {
-        if (targets[a] == searchTarget) return true;
+        if (targets[a] == searchTarget)
+            return true;
     }
     return false;
 }
@@ -108,7 +117,9 @@ bool ClipLibX11::HasTarget(Atom searchTarget, std::vector<Atom> &targets) {
 // Send a Conversion request to obtain a list of targets. Return false if a connection to the XServer was not established.
 bool ClipLibX11::Internal_RequestClipboardTargets() {
     
-    if (PrimaryDisplay == None) return false;
+    if (PrimaryDisplay == None)
+        return false;
+
     XConvertSelection(PrimaryDisplay, ClipAtom, TargetAtom, HoldingAtom, HoldingW, CurrentTime);
     return true;
 }
@@ -119,9 +130,11 @@ std::vector<Atom> ClipLibX11::Internal_RetrieveClipboardTargets() {
     int dummyInt;
     unsigned long nItems, dummyUl;
     unsigned char* data;
+
     XGetWindowProperty(PrimaryDisplay, HoldingW, HoldingAtom, 0, CLIPLIB_ATOM_LIMIT * sizeof(Atom), True, XA_ATOM, &actualType, &dummyInt, &nItems, &dummyUl, &data);
     Atom* dataTargets = (Atom*)data;
     std::vector<Atom> targets(nItems, None);
+
     for (unsigned a = 0; a <nItems; a++) {
         targets[a] = dataTargets[a];
     }
@@ -132,8 +145,11 @@ std::vector<Atom> ClipLibX11::Internal_RetrieveClipboardTargets() {
 // Populates a vector with existing clipboard targets, return true if vector has been successfully populated.
 bool ClipLibX11::GetClipboardTargets(std::vector<Atom>& targets) {
     
-    if (!Internal_RequestClipboardTargets()) return false;
+    if (!Internal_RequestClipboardTargets())
+        return false;
+
     XEvent event;
+
     while(1) {
         XNextEvent(PrimaryDisplay, &event);
         if (event.type == SelectionNotify) {
@@ -151,7 +167,9 @@ bool ClipLibX11::GetClipboardTargets(std::vector<Atom>& targets) {
 // Request conversion of the clipboard slection as a UTF8 String
 bool ClipLibX11::Internal_RequestSelectionUtf8() {
     
-    if (PrimaryDisplay == None) return false;
+    if (PrimaryDisplay == None)
+        return false;
+
     XConvertSelection(PrimaryDisplay, ClipAtom, Utf8Atom, HoldingAtom, HoldingW, CurrentTime);
     return true;
 }
@@ -163,22 +181,29 @@ char* ClipLibX11::Internal_RetrieveIncrUtf8 () {
     int dummyInt;
     unsigned long dummyUl, size;
     unsigned char* data = nullptr;
+
     XGetWindowProperty(PrimaryDisplay, HoldingW, HoldingAtom, 0, 0, True, AnyPropertyType, &actualType, &dummyInt, &dummyUl, &dummyUl, &data);
     char* str = new char[*(int*)data];
     unsigned int index = 0;
+
     XFree(data);
 
     // Steps for the INCR chunking mechanism desribed: https://x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#incr_properties
     XEvent event;
+
     while (1) {
         XNextEvent(PrimaryDisplay, &event);
         if (event.type == SelectionNotify || PropertyNotify) {           
             XGetWindowProperty(PrimaryDisplay, HoldingW, HoldingAtom, 0, 0, False, AnyPropertyType, &actualType, &dummyInt, &dummyUl, &size, &data);
             XFree(data);
-            if (size == 0) return str;
+
+            if (size == 0)
+                return str;
+
             XGetWindowProperty(PrimaryDisplay, HoldingW, HoldingAtom, 0, size, True, AnyPropertyType, &actualType, &dummyInt, &dummyUl, &dummyUl, &data);
             std::memcpy(str + index, data, size);
             XFree(data);
+
             index += size;
 
         } 
@@ -193,7 +218,9 @@ char* ClipLibX11::Internal_RetrieveSelectionUtf8() {
     int dummyInt;
     unsigned long dummyUl, size;
     unsigned char* data = nullptr;
+
     XGetWindowProperty(PrimaryDisplay, HoldingW, HoldingAtom, 0, 0, False, AnyPropertyType, &actualType, &dummyInt, &dummyUl, &size, &data);
+    
     if (actualType == IncrAtom) {
         char *text = Internal_RetrieveIncrUtf8();
         XFree(data);
@@ -201,11 +228,14 @@ char* ClipLibX11::Internal_RetrieveSelectionUtf8() {
     }
     XFree(data);
     XGetWindowProperty(PrimaryDisplay, HoldingW, HoldingAtom, 0, size, False, AnyPropertyType, &actualType, &dummyInt, &dummyUl, &dummyUl, &data);
+    
     char* text = new char[size + 1];
+    
     std::memcpy(text, (char*)data, size);
     text[size] = '\0';
     XFree(data);
     XDeleteProperty(PrimaryDisplay, HoldingW, HoldingAtom);
+    
     return text;
 }
 
@@ -213,18 +243,28 @@ char* ClipLibX11::Internal_RetrieveSelectionUtf8() {
 std::string ClipLibX11::GetSelectionAsUtf8() {
     
     std::vector<Atom> targets;
+    
     if (GetClipboardTargets(targets) && HasTarget(Utf8Atom, targets)) {
+        
         Internal_RequestSelectionUtf8();
+        
         while(1) {
+            
             XEvent event;
             XNextEvent(PrimaryDisplay, &event);
+            
             if (event.type == SelectionNotify) {
+                
                 XSelectionEvent &sEvent = event.xselection;
+                
                 if (sEvent.property != None) {
+                    
                     char* rawResult = Internal_RetrieveSelectionUtf8();
                     std::string result(rawResult);
+                    
                     delete[] rawResult;
                     return result;
+
                 } else {
                     return std::string();
                 }
@@ -233,8 +273,10 @@ std::string ClipLibX11::GetSelectionAsUtf8() {
                 
         }
     }
+
     else return std::string();
 }
+
 // Relinquishes ownership of the CLIPBOARD selection to the X server if selection is owned by ClipWindow.
 void ClipLibX11::RelinquishClipboard() {
     if (XGetSelectionOwner(PrimaryDisplay, ClipAtom) == ClipWindow) {
@@ -248,15 +290,19 @@ void ClipLibX11::CleanupSetClipboard(void* data) {
         XDestroyWindow(ClipLibX11::ClipDisplay, ClipLibX11::ClipWindow);
         ClipWindow = None;
     }
+    
     TextLength = 0;
+    
     if (TextData != nullptr) {
         delete[] TextData;
         TextData = nullptr;
     }
+    
     if (TargetData != nullptr) {
         delete[] TargetData;
         TargetData = nullptr;
     }
+    
     TargetDataLength = 0;
 
     if (ClipDisplay != nullptr) {
@@ -275,9 +321,13 @@ void* ClipLibX11::SetClipboardTextProc(void* data) {
     XEvent event;
     bool cont = true;
     while(cont) {
+        
         XNextEvent(ClipDisplay, &event);
+        
         if (event.type == SelectionRequest) {
+            
             XSelectionRequestEvent& reqEvent = event.xselectionrequest;
+            
             if (reqEvent.owner == ClipWindow && reqEvent.selection == ClipAtom) {
                 
                 if (reqEvent.target == Utf8Atom || reqEvent.target == TextAtom) {
@@ -293,6 +343,7 @@ void* ClipLibX11::SetClipboardTextProc(void* data) {
     }
 
     pthread_cleanup_pop(1);
+    
     return nullptr;
 }
 
@@ -300,8 +351,11 @@ void* ClipLibX11::SetClipboardTextProc(void* data) {
 bool ClipLibX11::SetClipboardText(char* str) {
     
     pthread_mutex_lock(&DataMutex);
+    
     if (ClipWindow == None) {
+        
         ClipDisplay = XOpenDisplay(NULL);
+        
         try {
             TextLength = strlen(str) + 1;
             TextData = new char[TextLength];
@@ -311,17 +365,21 @@ bool ClipLibX11::SetClipboardText(char* str) {
             TargetData[1] = TimeStampAtom;
             TargetData[2] = TextAtom;
             TargetDataLength = 3;
+            
             std::memcpy(TextData, str, TextLength);
             ClipWindow = XCreateSimpleWindow(ClipDisplay, RootW, -9, -9, 1, 1, 0, 0, 0);
+        
         } catch (std::exception e) {
             pthread_mutex_unlock(&DataMutex);
             CleanupSetClipboard(str);
             return false;
         }
+        
         pthread_mutex_unlock(&DataMutex);
         pthread_create(&ClipThread, NULL, SetClipboardTextProc, (void*)TextData);
 
         XSetSelectionOwner(ClipDisplay, ClipAtom, ClipWindow, CurrentTime);
+        
         if (XGetSelectionOwner(ClipDisplay, ClipAtom) != ClipWindow) {
             pthread_cancel(ClipThread);
             return false;
@@ -335,13 +393,18 @@ bool ClipLibX11::SetClipboardText(char* str) {
 }
 
 XSelectionEvent ClipLibX11::ConstructSelectionEvent(XSelectionRequestEvent event) {
+    
     XSelectionEvent payload;
     payload.type = SelectionNotify;
     payload.requestor = event.requestor;
     payload.time = CurrentTime;
     payload.selection = ClipAtom;
-    if (event.property == None) payload.property = event.target;
-    else payload.property = event.property;
+    
+    if (event.property == None)
+        payload.property = event.target;
+    else
+        payload.property = event.property;
+    
     return payload;
 }
 
